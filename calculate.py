@@ -5,6 +5,7 @@ import math           # 导入 math 库，用于数学计算，例如平方根
 root = tk.Tk()        # 实例化一个 Tkinter 的根窗口对象，所有的 GUI 元素都将在这个窗口中创建
 root.title("简易计算器")  # 设置窗口的标题
 root.geometry("400x600")  # 设置窗口的大小为 400x600 像素
+root.iconbitmap(r'C:\Users\26515\Desktop\program\favicon.ico')   # 设置窗口图标
 
 # 全局变量，用来存储表达式
 expression = ""  # 字符串变量，用于存储用户输入的数学表达式
