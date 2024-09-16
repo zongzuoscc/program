@@ -121,4 +121,4 @@ for i in range(4):
     root.grid_columnconfigure(i, weight=1)  # 为每一列设置相同的权重，确保窗口调整大小时每列等比例变化
 
 # 开始主循环
-root.mainloop()  # 进入 Tkinter 主循环，开始运行 GUI 程序
+root.mainloop()  # 进入 Tkinter 主循环，开始运行 GUI 程序 能够确保窗口持续存在
