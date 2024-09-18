@@ -1,174 +1,198 @@
-import tkinter as tk
-from tkinter import messagebox, filedialog
-from PIL import Image, ImageTk
+import pygame
+import sys
 import random
+from pygame.locals import *
 
-class MyPuzzleGame:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("拼图游戏")
-        self.root.geometry("600x600")
+# 游戏设置
+background_color = (255, 255, 255)
+BLACK = (0, 0, 0)
+FPS = 30
 
-        # 初始化变量
-        self.image_path = None
-        self.puzzle_size = 3  # 默认拼图大小为 3x3
-        self.tiles = []
-        self.correct_order = []
-        self.current_order = []
-        self.tile_objects = []  # 存储每个拼图块的图像对象
-        self.blank_index = None  # 存储空白块的位置
+# 定义拼图碎片的大小和数量（默认3x3）
+ROWS, COLS = 3, 3
+cell_nums = ROWS * COLS
+max_rand_time = 100
 
-        # 被拖动的拼图块
-        self.selected_tile = None
-        self.selected_tile_index = None
+# 初始化
+pygame.init()
+mainClock = pygame.time.Clock()
 
-        # 创建主界面控件
-        self.create_widgets()
+# 加载图片
+gameImage = pygame.image.load('star.jpg')
+gameRect = gameImage.get_rect()
 
-    def create_widgets(self):
-        # 创建菜单栏
-        menubar = tk.Menu(self.root)
-        self.root.config(menu=menubar)
+# 设置窗口
+windowSurface = pygame.display.set_mode((800, 800))
+pygame.display.set_caption('拼图游戏')
 
-        # 图片菜单
-        image_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="图片", menu=image_menu)
-        image_menu.add_command(label="加载图片", command=self.load_image)
-        image_menu.add_command(label="切换图片", command=self.random_image)
-        image_menu.add_separator()
-        image_menu.add_command(label="退出", command=self.root.quit)
+cellWidth = int(gameRect.width / ROWS)
+cellHeight = int(gameRect.height / ROWS)
 
-        # 设置菜单
-        settings_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="设置", menu=settings_menu)
-        settings_menu.add_command(label="设置拼图大小", command=self.set_puzzle_size)
+# 完成标志
+finish = False
+show_original = False  # 是否显示原图的标志
 
-        # 创建画布，用于显示拼图
-        self.canvas = tk.Canvas(self.root, width=500, height=500)
-        self.canvas.pack(pady=20)
+# 随机生成游戏盘面
+def newGameBoard():
+    board = [i for i in range(cell_nums)]
+    black_cell = cell_nums - 1
+    board[black_cell] = -1
 
-        # 添加查看原图按钮
-        self.view_button = tk.Button(self.root, text="查看原图", command=self.view_image)
-        self.view_button.pack(side="left", padx=10)
+    for _ in range(max_rand_time):
+        direction = random.randint(0, 3)
+        if direction == 0:
+            black_cell = moveLeft(board, black_cell)
+        elif direction == 1:
+            black_cell = moveRight(board, black_cell)
+        elif direction == 2:
+            black_cell = moveUp(board, black_cell)
+        elif direction == 3:
+            black_cell = moveDown(board, black_cell)
+    return board, black_cell
 
-        # 添加开始按钮
-        self.start_button = tk.Button(self.root, text="开始游戏", command=self.start_game)
-        self.start_button.pack(side="right", padx=10)
+# 移动函数
+def moveRight(board, black_cell):
+    if black_cell % ROWS == 0:
+        return black_cell
+    board[black_cell - 1], board[black_cell] = board[black_cell], board[black_cell - 1]
+    return black_cell - 1
 
-    def load_image(self):
-        # 加载图片并调整大小
-        self.image_path = filedialog.askopenfilename()
-        if self.image_path:
-            self.original_image = Image.open(self.image_path)
-            self.original_image = self.original_image.resize((500, 500))
-            self.photo_image = ImageTk.PhotoImage(self.original_image)
-            self.canvas.create_image(0, 0, anchor=tk.NW, image=self.photo_image)
+def moveLeft(board, black_cell):
+    if black_cell % ROWS == ROWS - 1:
+        return black_cell
+    board[black_cell + 1], board[black_cell] = board[black_cell], board[black_cell + 1]
+    return black_cell + 1
 
-    def random_image(self):
-        # 随机选择图片
-        self.image_path = random.choice(["image1.jpg", "image2.jpg", "image3.jpg"])  # 替换为实际图片路径
-        self.load_image()
+def moveDown(board, black_cell):
+    if black_cell < ROWS:
+        return black_cell
+    board[black_cell - ROWS], board[black_cell] = board[black_cell], board[black_cell - ROWS]
+    return black_cell - ROWS
 
-    def set_puzzle_size(self):
-        # 设置拼图矩阵大小（容易、中等、困难）
-        size = tk.simpledialog.askinteger("拼图大小", "请输入拼图矩阵大小（如 3 表示 3x3）", minvalue=2, maxvalue=10)
-        if size:
-            self.puzzle_size = size
+def moveUp(board, black_cell):
+    if black_cell >= cell_nums - ROWS:
+        return black_cell
+    board[black_cell + ROWS], board[black_cell] = board[black_cell], board[black_cell + ROWS]
+    return black_cell + ROWS
 
-    def start_game(self):
-        # 将图片分割为拼图块并打乱顺序
-        if not self.image_path:
-            messagebox.showerror("错误", "请先加载图片")
-            return
+# 是否完成
+def isFinished(board):
+    for i in range(cell_nums - 1):
+        if board[i] != i:
+            return False
+    return True
 
-        self.tiles = []
-        self.correct_order = []
-        self.current_order = []
-        self.canvas.delete("all")
-        width, height = self.original_image.size
-        tile_width = width // self.puzzle_size
-        tile_height = height // self.puzzle_size
+# 绘制按钮
+def draw_button(text, x, y, w, h, color, hover_color, action=None):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    
+    # 检查鼠标是否在按钮上并变更颜色
+    if x + w > mouse[0] > x and y + h > mouse[1] > y:
+        pygame.draw.rect(windowSurface, hover_color, (x, y, w, h))
+        if click[0] == 1 and action is not None:
+            action()
+    else:
+        pygame.draw.rect(windowSurface, color, (x, y, w, h))
 
-        # 分割图片并打乱顺序
-        for row in range(self.puzzle_size):
-            for col in range(self.puzzle_size):
-                x = col * tile_width
-                y = row * tile_height
-                if row == self.puzzle_size - 1 and col == self.puzzle_size - 1:
-                    # 最后一块设为空白块
-                    self.tiles.append(None)
-                    self.correct_order.append((row, col))
-                    self.current_order.append((row, col))
-                    self.blank_index = len(self.current_order) - 1
-                else:
-                    tile_image = self.original_image.crop((x, y, x + tile_width, y + tile_height))
-                    tile_photo = ImageTk.PhotoImage(tile_image)
-                    self.tiles.append(tile_photo)
-                    self.correct_order.append((row, col))
-                    self.current_order.append((row, col))
+    # 设置字体为宋体
+    font_path = 'C:\\Windows\\Fonts\\simsun.ttc'  # Windows系统的宋体路径
+    # font_path = '/path/to/simsun.ttf'  # macOS或其他系统的路径
+    font = pygame.font.Font(font_path, 24)  # 设置字体大小
+    text_surface = font.render(text, True, BLACK)  # 确保文字颜色与按钮颜色不同
+    text_rect = text_surface.get_rect(center=(x + w / 2, y + h / 2))
+    windowSurface.blit(text_surface, text_rect)
 
-        # 随机打乱拼图块
-        random.shuffle(self.current_order)
+# 切换图片函数
+def change_image():
+    global gameImage, gameRect, cellWidth, cellHeight
+    gameImage = pygame.image.load(random.choice(['star.jpg', 'tom.jpg', 'girl.jpg']))  # 替换为实际图片路径
+    gameRect = gameImage.get_rect()
+    cellWidth = int(gameRect.width / ROWS)
+    cellHeight = int(gameRect.height / ROWS)
 
-        # 在画布上显示拼图块并绑定鼠标事件
-        self.tile_objects = []
-        for i, (row, col) in enumerate(self.current_order):
-            x, y = col * tile_width, row * tile_height
-            if self.tiles[i]:
-                tile = self.canvas.create_image(x, y, anchor=tk.NW, image=self.tiles[i])
-                self.tile_objects.append(tile)
-            else:
-                self.tile_objects.append(None)  # 空白块不显示图像
+# 查看原图
+def toggle_original():
+    global show_original
+    show_original = not show_original
 
-        # 绑定鼠标事件
-        self.canvas.bind("<Button-1>", self.on_tile_click)
+# 图片重排
+def shuffle_image():
+    global gameBoard, black_cell, finish
+    gameBoard, black_cell = newGameBoard()
+    finish = False
 
-    def on_tile_click(self, event):
-        # 检查用户点击了哪个拼图块
-        clicked_item = self.canvas.find_closest(event.x, event.y)
-        index = None
+gameBoard, black_cell = newGameBoard()
 
-        for i, tile in enumerate(self.tile_objects):
-            if tile and tile == clicked_item[0]:
-                index = i
-                break
+# 游戏主循环
+while True:
+    for event in pygame.event.get():
+        # 退出
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        if finish:
+            continue
 
-        if index is None:
-            return  # 如果点击的是空白处，忽略
+        # 按下方向键或字母键移动方块
+        if event.type == KEYDOWN:
+            if event.key == K_LEFT or event.key == ord('a'):
+                black_cell = moveLeft(gameBoard, black_cell)
+            if event.key == K_RIGHT or event.key == ord('d'):
+                black_cell = moveRight(gameBoard, black_cell)
+            if event.key == K_UP or event.key == ord('w'):
+                black_cell = moveUp(gameBoard, black_cell)
+            if event.key == K_DOWN or event.key == ord('s'):
+                black_cell = moveDown(gameBoard, black_cell)
 
-        # 如果拼图块与空白块相邻，交换它们的位置
-        if self.is_adjacent_to_blank(index):
-            self.swap_tiles(index, self.blank_index)
+        # 点击鼠标左键，移动方块
+        if event.type == MOUSEBUTTONDOWN and event.button == 1:
+            x, y = pygame.mouse.get_pos()
+            if y < gameRect.height:  # 确保点击的是拼图部分
+                col = int(x / cellWidth)
+                row = int(y / cellHeight)
+                index = col + row * ROWS
+                if index == black_cell - 1 or index == black_cell + 1 or index == black_cell - ROWS or index == black_cell + ROWS:
+                    gameBoard[black_cell], gameBoard[index] = gameBoard[index], gameBoard[black_cell]
+                    black_cell = index
 
-            # 更新空白块的位置
-            self.blank_index = index
+    # 如果拼图完成，设置完成标志
+    if isFinished(gameBoard):
+        gameBoard[black_cell] = cell_nums - 1
+        finish = True
 
-            # 检查拼图是否完成
-            self.check_puzzle()
+    # 填充游戏窗口
+    windowSurface.fill(background_color)
 
-    def is_adjacent_to_blank(self, index):
-        # 检查点击的拼图块是否与空白块相邻
-        row1, col1 = self.current_order[index]
-        row2, col2 = self.current_order[self.blank_index]
-        return (abs(row1 - row2) == 1 and col1 == col2) or (abs(col1 - col2) == 1 and row1 == row2)
+    # 查看原图
+    if show_original:
+        windowSurface.blit(gameImage, (0, 0))
+    else:
+        # 将拼图中的每个小块绘制到游戏窗口中
+        for i in range(cell_nums):
+            rowDst = int(i / ROWS)
+            colDst = int(i % ROWS)
+            rectDst = pygame.Rect(colDst * cellWidth, rowDst * cellHeight, cellWidth, cellHeight)
 
-    def swap_tiles(self, index1, index2):
-        # 交换两个拼图块在画布上的位置
-        self.current_order[index1], self.current_order[index2] = self.current_order[index2], self.current_order[index1]
-        self.canvas.coords(self.tile_objects[index1], *self.canvas.coords(self.tile_objects[index2]))
-        self.canvas.coords(self.tile_objects[index2], *self.canvas.coords(self.tile_objects[index1]))
+            if gameBoard[i] == -1:
+                continue
 
-    def view_image(self):
-        # 查看原图
-        if self.image_path:
-            self.canvas.create_image(0, 0, anchor=tk.NW, image=self.photo_image)
+            rowArea = int(gameBoard[i] / ROWS)
+            colArea = int(gameBoard[i] % ROWS)
+            rectArea = pygame.Rect(colArea * cellWidth, rowArea * cellHeight, cellWidth, cellHeight)
+            windowSurface.blit(gameImage, rectDst, rectArea)
 
-    def check_puzzle(self):
-        # 检查拼图是否完成
-        if self.current_order == self.correct_order:
-            messagebox.showinfo("恭喜", "拼图成功！")
+        # 绘制拼图的网格线
+        for i in range(ROWS + 1):
+            pygame.draw.line(windowSurface, BLACK, (i * cellWidth, 0), (i * cellWidth, gameRect.height))
+        for i in range(ROWS + 1):
+            pygame.draw.line(windowSurface, BLACK, (0, i * cellHeight), (gameRect.width, i * cellHeight))
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    game = MyPuzzleGame(root)
-    root.mainloop()
+    # 绘制按钮
+    draw_button('查看原图', 50, gameRect.height + 10, 100, 30, (200, 200, 200), (150, 150, 150), toggle_original)
+    draw_button('切换图片', 250, gameRect.height + 10, 100, 30, (200, 200, 200), (150, 150, 150), change_image)
+    draw_button('图片重排', 450, gameRect.height + 10, 100, 30, (200, 200, 200), (150, 150, 150), shuffle_image)
+    # 更新游戏窗口
+    pygame.display.update()
+    # 控制游戏帧率
+    mainClock.tick(FPS)
