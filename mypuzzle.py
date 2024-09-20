@@ -97,7 +97,6 @@ def draw_button(text, x, y, w, h, color, hover_color, action=None):
 
     # 设置字体为宋体
     font_path = 'C:\\Windows\\Fonts\\simsun.ttc'  # Windows系统的宋体路径
-    # font_path = '/path/to/simsun.ttf'  # macOS或其他系统的路径
     font = pygame.font.Font(font_path, 24)  # 设置字体大小
     text_surface = font.render(text, True, BLACK)  # 确保文字颜色与按钮颜色不同
     text_rect = text_surface.get_rect(center=(x + w / 2, y + h / 2))
