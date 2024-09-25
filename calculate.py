@@ -1,4 +1,5 @@
 import sys
+import requests
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLineEdit, QGridLayout, QDialog, QLabel, QComboBox, QMenuBar, QMainWindow, QAction
 from PyQt5.QtCore import Qt
 from math import sqrt
@@ -163,62 +164,79 @@ class BaseConverter(QDialog):  # 定义BaseConverter类，继承自QDialog
             self.result_output.setText('输入无效')  # 显示错误信息
 
 class CurrencyConverter(QDialog):  # 定义CurrencyConverter类，继承自QDialog
+    API_URL = "https://api.exchangerate-api.com/v4/latest/"
+
     def __init__(self, parent=None):
-        super().__init__(parent)  # 调用父类的构造函数
-        self.initUI()  # 调用初始化界面的方法
+        super().__init__(parent)
+        self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("汇率转换器")  # 设置窗口标题
-        self.setGeometry(400, 400, 300, 200)  # 设置窗口大小和位置
+        self.setWindowTitle("汇率转换器")
+        self.setGeometry(400, 400, 300, 200)
 
-        # 创建汇率转换的UI元素
-        self.amount_label = QLabel('金额:', self)  # 创建标签
-        self.amount_input = QLineEdit(self)  # 创建输入框
+        # 创建UI元素
+        self.amount_label = QLabel('金额:', self)
+        self.amount_input = QLineEdit(self)
 
-        self.from_currency_label = QLabel('从:', self)  # 创建标签
-        self.from_currency = QComboBox(self)  # 创建下拉框
-               # 继续创建汇率转换的UI元素
-        self.to_currency_label = QLabel('到:', self)  # 创建标签，表示目标货币
-        self.to_currency = QComboBox(self)  # 创建下拉框，用于选择目标货币
-        self.to_currency.addItems(['USD', 'EUR', 'CNY', 'JPY'])  # 向下拉框中添加货币选项
+        self.from_currency_label = QLabel('从:', self)
+        self.from_currency = QComboBox(self)
+        self.from_currency.addItems(['USD', 'EUR', 'CNY', 'JPY'])  # 源货币选项
 
-        self.rate_label = QLabel('汇率:', self)  # 创建标签，表示汇率
-        self.rate_input = QLineEdit(self)  # 创建输入框，用于输入汇率
+        self.to_currency_label = QLabel('到:', self)
+        self.to_currency = QComboBox(self)
+        self.to_currency.addItems(['USD', 'EUR', 'CNY', 'JPY'])  # 目标货币选项
 
-        self.result_label = QLabel('转换结果:', self)  # 创建标签，表示转换结果
-        self.result_output = QLineEdit(self)  # 创建输入框，用于显示转换结果
-        self.result_output.setReadOnly(True)  # 设置输入框为只读，不允许用户编辑
+        self.result_label = QLabel('转换结果:', self)
+        self.result_output = QLineEdit(self)
+        self.result_output.setReadOnly(True)
 
-        self.convert_button = QPushButton('转换', self)  # 创建按钮，用于触发转换操作
-        self.convert_button.clicked.connect(self.convert_currency)  # 连接按钮的点击事件到convert_currency方法
+        self.convert_button = QPushButton('转换', self)
+        self.convert_button.clicked.connect(self.convert_currency)  # 连接到汇率转换逻辑
 
         # 创建垂直布局
         layout = QVBoxLayout()
-        layout.addWidget(self.amount_label)  # 将金额标签添加到布局
-        layout.addWidget(self.amount_input)  # 将金额输入框添加到布局
-        layout.addWidget(self.from_currency_label)  # 将源货币标签添加到布局
-        layout.addWidget(self.from_currency)  # 将源货币下拉框添加到布局
-        layout.addWidget(self.to_currency_label)  # 将目标货币标签添加到布局
-        layout.addWidget(self.to_currency)  # 将目标货币下拉框添加到布局
-        layout.addWidget(self.rate_label)  # 将汇率标签添加到布局
-        layout.addWidget(self.rate_input)  # 将汇率输入框添加到布局
-        layout.addWidget(self.result_label)  # 将结果标签添加到布局
-        layout.addWidget(self.result_output)  # 将结果输出框添加到布局
-        layout.addWidget(self.convert_button)  # 将转换按钮添加到布局
+        layout.addWidget(self.amount_label)
+        layout.addWidget(self.amount_input)
+        layout.addWidget(self.from_currency_label)
+        layout.addWidget(self.from_currency)
+        layout.addWidget(self.to_currency_label)
+        layout.addWidget(self.to_currency)
+        layout.addWidget(self.result_label)
+        layout.addWidget(self.result_output)
+        layout.addWidget(self.convert_button)
 
-        self.setLayout(layout)  # 将布局设置为该对话框的布局
+        self.setLayout(layout)
+
+    def get_exchange_rate(self, from_currency, to_currency):
+        try:
+            # 使用 API 获取汇率
+            response = requests.get(self.API_URL + from_currency)
+            data = response.json()  # 转换为 JSON 格式
+            if response.status_code == 200:
+                return data['rates'][to_currency]  # 返回目标货币的汇率
+            else:
+                self.result_output.setText("汇率不可用")
+                return None
+        except requests.exceptions.RequestException as e:
+            self.result_output.setText("无法获取汇率")
+            return None
 
     def convert_currency(self):
-        # 定义转换货币的方法
         try:
-            amount = float(self.amount_input.text())  # 获取输入的金额并转换为浮点数
-            rate = float(self.rate_input.text())  # 获取输入的汇率并转换为浮点数
+            # 获取输入的金额
+            amount = float(self.amount_input.text())
 
-            result = amount * rate  # 计算转换结果
-            self.result_output.setText(f'{result:.2f}')  # 将结果显示在结果输出框，保留两位小数
+            # 获取用户选择的源货币和目标货币
+            from_curr = self.from_currency.currentText()
+            to_curr = self.to_currency.currentText()
+
+            # 获取汇率
+            rate = self.get_exchange_rate(from_curr, to_curr)
+            if rate is not None:
+                result = amount * rate  # 计算结果
+                self.result_output.setText(f'{result:.2f}')  # 显示结果
         except ValueError:
-            self.result_output.setText("输入无效")  # 如果输入无效，则在结果输出框显示错误信息
-
+            self.result_output.setText("输入无效")
 # 程序入口
 if __name__ == '__main__':
     app = QApplication(sys.argv)  # 创建应用程序对象
