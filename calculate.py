@@ -78,29 +78,43 @@ class Calculator(QMainWindow):  # 定义Calculator类，继承自QMainWindow
                 self.display.setText(current_text[:-1])  # 删除最后一个字符
             elif text == '=':
                 try:
-                    self.display.setText(str(eval(self.display.text())))  # 计算表达式并显示结果
-                except Exception as e:
-                    self.display.setText('Error')  # 显示错误信息
+                    result = eval(self.display.text())  # 计算表达式
+                    self.display.setText(str(result))  # 显示结果
+                except ZeroDivisionError:
+                    self.display.setText('错误：除数不能为0')  # 捕获除以0的异常
+                except Exception:
+                    self.display.setText('错误')  # 捕获其他异常
             elif text == '√':
                 try:
-                    result = sqrt(float(self.display.text()))  # 计算平方根
+                    number = float(self.display.text())
+                    if number < 0:
+                        raise ValueError("负数无法求平方根")  # 自定义负数错误
+                    result = sqrt(number)  # 计算平方根
                     self.display.setText(str(result))  # 显示结果
+                except ValueError as e:
+                    self.display.setText(f"错误：{e}")  # 显示负数错误信息
                 except Exception as e:
-                    self.display.setText('Error')  # 显示错误信息
+                    self.display.setText('错误')  # 捕获其他错误
             elif text == 'x²':
                 try:
                     result = float(self.display.text()) ** 2  # 计算平方
                     self.display.setText(str(result))  # 显示结果
                 except Exception as e:
-                    self.display.setText('Error')  # 显示错误信息
+                    self.display.setText('错误')  # 捕获其他错误
             elif text == '1/x':
                 try:
-                    result = 1 / float(self.display.text())  # 计算倒数
+                    denominator = float(self.display.text())
+                    if denominator == 0:
+                        raise ZeroDivisionError("除数不能为0")  # 自定义除数为0错误
+                    result = 1 / denominator  # 计算倒数
                     self.display.setText(str(result))  # 显示结果
+                except ZeroDivisionError as e:
+                    self.display.setText(f"错误：{e}")  # 显示除数为0错误信息
                 except Exception as e:
-                    self.display.setText('Error')  # 显示错误信息
+                    self.display.setText('错误')  # 捕获其他错误
             else:
                 self.display.setText(self.display.text() + text)  # 将按钮文本添加到显示屏幕
+
 
     def open_base_converter(self):
         # 创建进制转换器窗口
