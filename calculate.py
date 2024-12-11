@@ -33,7 +33,7 @@ class Calculator(QMainWindow):  # 定义Calculator类，继承自QMainWindow
         self.display = QLineEdit(self)  # 创建一个文本输入框作为显示屏幕
         self.display.setReadOnly(False)  # 设置显示屏幕可编辑
         self.display.setAlignment(Qt.AlignRight)  # 设置文本右对齐
-        self.display.setFixedHeight(70)  # 设置显示屏幕的高度为50
+        self.display.setFixedHeight(70)  # 设置显示屏幕的高度为70
 
         # 按钮列表（修改为中文，新增退格按钮）
         # buttons = [
@@ -46,8 +46,8 @@ class Calculator(QMainWindow):  # 定义Calculator类，继承自QMainWindow
             'CE','(',')','←',
             '1/x', '%', '√', 'x²',
             '7', '8', '9', '-',
-            '4', '5', '6', '×',
-            '1', '2', '3', '÷',
+            '4', '5', '6', '*',
+            '1', '2', '3', '/',
             '0', '.', '+', '='
         ]
 

@@ -350,31 +350,13 @@ class WelcomeScreen(QWidget):
         layout = QVBoxLayout()  # 创建垂直布局
         self.setLayout(layout)  # 设置当前窗口的布局为垂直布局
 
-        # 欢迎标题，使用富文本显示彩色艺术字
-        title = QLabel()  # 创建标签用于显示标题
-        # 启用富文本格式，使其支持HTML
-        title.setTextFormat(Qt.RichText)  # 设置文本格式为富文本
-        # 设置对齐方式（居中）
+        # 创建标签用于显示标题
+        title = QLabel("欢迎来到拼图游戏！")
         title.setAlignment(Qt.AlignCenter)  # 设置文本居中对齐
+        title.setFont(QFont("宋体", 40, QFont.Bold))  # 设置字体大小和加粗
+        title.setStyleSheet("color: black;")  # 设置文字颜色为黑色
 
-        # 设置彩色艺术字
-        title_text = "<p style='font-size:40pt; font-weight:bold;'>"  # 设置标题文本样式
-        colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']  # 定义颜色列表
-        text = "欢迎来到拼图游戏！"  # 欢迎文本
-
-        for i, char in enumerate(text):  # 遍历欢迎文本的每个字符
-            # 用取模运算来实现颜色的循环选择
-            color = colors[i % len(colors)]  # 根据字符索引选择颜色
-            title_text += f"<span style='color:{color};'>{char}</span>"  # 为字符设置颜色
-        title_text += "</p>"  # 结束HTML段落
-        title.setText(title_text)  # 设置标签的文本为富文本
         layout.addWidget(title)  # 将标题添加到布局中
-
-        # 游戏说明
-        description = QLabel("请选择难度并开始游戏，点击按钮开始拼图挑战。")  # 创建说明标签
-        description.setAlignment(Qt.AlignCenter)  # 设置说明文本居中对齐
-        layout.addWidget(description)  # 将说明添加到布局中
-
         # 开始游戏按钮
         start_button = QPushButton("开始游戏")  # 创建开始游戏按钮
         start_button.setFont(QFont("Arial", 25))  # 设置按钮字体和大小
